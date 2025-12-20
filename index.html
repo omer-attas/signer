@@ -46,6 +46,9 @@
     
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade-up { animation: fadeIn 0.4s ease-out forwards; }
+    canvas { touch-action: none; }
+    /* إجبار التاريخ على اتجاه محدد */
+    .force-ltr { direction: ltr !important; unicode-bidi: isolate; text-align: left; }
   </style>
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -71,7 +74,6 @@
         twitterUrl: "https://x.com/omer_attas"
     };
 
-    // --- ICONS ---
     const Icons = {
       Badge: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.78 4.78 4 4 0 0 1-6.74 0 4 4 0 0 1-4.78-4.78 4 4 0 0 1 0-6.74Z"/></svg>,
       Upload: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
@@ -85,7 +87,40 @@
       Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
       Twitter: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
       Text: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>,
+      Calendar: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>,
       Pen: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+    };
+
+    // --- واجهة التعريف ---
+    const WelcomeModal = ({ onClose }) => {
+      return (
+        <div className="fixed inset-0 z-[500] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-fade-up">
+               <div className="bg-slate-800 p-6 text-white text-center">
+                  <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Badge /></div>
+                  <h2 className="text-2xl font-bold">الموثق الذكي Pro</h2>
+                  <p className="text-slate-300 text-sm mt-1">تطوير: {DEVELOPER.name}</p>
+               </div>
+               <div className="p-8 space-y-6 text-right">
+                  <div className="space-y-4">
+                     <div className="flex items-start gap-4">
+                        <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">1</div>
+                        <div><h4 className="font-bold text-gray-800">تحميل المستند</h4><p className="text-sm text-gray-500">اختر ملف PDF المراد العمل عليه.</p></div>
+                     </div>
+                     <div className="flex items-start gap-4">
+                        <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">2</div>
+                        <div><h4 className="font-bold text-gray-800">التوقيع والتاريخ</h4><p className="text-sm text-gray-500">وقع يدوياً بلمسات ناعمة، أو أضف تاريخ اليوم بضغطة زر.</p></div>
+                     </div>
+                     <div className="flex items-start gap-4">
+                        <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">3</div>
+                        <div><h4 className="font-bold text-gray-800">الأتمتة</h4><p className="text-sm text-gray-500">استخدم ميزة "التكرار" لتوقيع كامل الملف دفعة واحدة.</p></div>
+                     </div>
+                  </div>
+                  <button onClick={onClose} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold shadow-lg transition-all">ابدأ الاستخدام</button>
+               </div>
+            </div>
+        </div>
+      );
     };
 
     const renderPage = async (pdf, pageNumber) => {
@@ -127,46 +162,55 @@
         };
     };
 
-    // --- SIGNATURE MODAL COMPONENT (UPDATED WITH COLORS) ---
+    // --- نافذة التوقيع (تم إصلاح تقطع الخط نهائياً) ---
     const SignatureModal = ({ onClose, onSave }) => {
         const canvasRef = useRef(null);
         const [isDrawing, setIsDrawing] = useState(false);
-        const [penColor, setPenColor] = useState('#2563eb'); // Default to Blue
+        const [penColor, setPenColor] = useState('#2563eb');
+
+        const getPos = (e) => {
+            const canvas = canvasRef.current;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = (e.clientX || (e.touches && e.touches[0].clientX));
+            const clientY = (e.clientY || (e.touches && e.touches[0].clientY));
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        };
 
         const startDrawing = (e) => {
-            const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d');
-            const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX || e.touches[0].clientX) - rect.left;
-            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            e.preventDefault();
+            const pos = getPos(e);
+            setIsDrawing(true);
+            const ctx = canvasRef.current.getContext('2d');
             
-            ctx.beginPath();
-            ctx.moveTo(x, y);
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
-            ctx.strokeStyle = penColor; // Use selected color
-            setIsDrawing(true);
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = penColor;
+            
+            // نبدأ المسار هنا مرة واحدة فقط
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
         };
 
         const draw = (e) => {
             if (!isDrawing) return;
-            const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d');
-            const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX || e.touches[0].clientX) - rect.left;
-            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            e.preventDefault();
+            const pos = getPos(e);
+            const ctx = canvasRef.current.getContext('2d');
             
-            ctx.lineTo(x, y);
+            // توصيل المسار الحالي بالنقطة الجديدة
+            ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
-            e.preventDefault(); 
         };
 
         const stopDrawing = () => {
             if (isDrawing) {
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-                ctx.closePath();
                 setIsDrawing(false);
+                const ctx = canvasRef.current.getContext('2d');
+                ctx.closePath();
             }
         };
 
@@ -184,41 +228,20 @@
         };
 
         return (
-            <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[600] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-fade-up">
                     <div className="bg-slate-800 p-4 text-white flex justify-between items-center">
-                        <h3 className="font-bold">رسم التوقيع</h3>
+                        <h3 className="font-bold">رسم التوقيع (خط متصل)</h3>
                         <button onClick={onClose} className="text-white/70 hover:text-white">✕</button>
                     </div>
-                    
-                    {/* Color Palette for Signature */}
                     <div className="bg-gray-50 p-2 flex justify-center gap-3 border-b">
                         <span className="text-xs text-gray-500 self-center font-bold">لون القلم:</span>
                         {['#2563eb', '#000000', '#dc2626', '#16a34a'].map(c => (
-                            <div 
-                                key={c} 
-                                onClick={() => setPenColor(c)} 
-                                className={`w-6 h-6 rounded-full cursor-pointer border-2 shadow-sm transition-transform ${penColor === c ? 'border-slate-800 scale-125 ring-2 ring-blue-100' : 'border-white'}`} 
-                                style={{background: c}}
-                                title={c}
-                            ></div>
+                            <div key={c} onClick={() => setPenColor(c)} className={`w-6 h-6 rounded-full cursor-pointer border-2 shadow-sm transition-transform ${penColor === c ? 'border-slate-800 scale-125 ring-2 ring-blue-100' : 'border-white'}`} style={{background: c}}></div>
                         ))}
                     </div>
-
                     <div className="p-4 bg-gray-100 flex justify-center">
-                        <canvas 
-                            ref={canvasRef}
-                            width={500}
-                            height={250}
-                            className="bg-white rounded-xl shadow-inner border border-gray-300 touch-none w-full max-w-[500px]"
-                            onMouseDown={startDrawing}
-                            onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
-                            onTouchStart={startDrawing}
-                            onTouchMove={draw}
-                            onTouchEnd={stopDrawing}
-                        />
+                        <canvas ref={canvasRef} width={500} height={250} className="bg-white rounded-xl shadow-inner border border-gray-300 touch-none w-full max-w-[500px]" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} />
                     </div>
                     <div className="p-4 flex gap-3 border-t bg-white">
                         <button onClick={clearCanvas} className="flex-1 py-2 text-slate-600 font-bold border rounded-lg hover:bg-slate-50">مسح</button>
@@ -227,37 +250,6 @@
                 </div>
             </div>
         );
-    };
-
-    const WelcomeModal = ({ onClose }) => {
-      return (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-fade-up">
-              <div className="bg-slate-800 p-6 text-white text-center">
-                 <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Badge /></div>
-                 <h2 className="text-2xl font-bold">برنامج الموثق الذكي</h2>
-                 <p className="text-slate-300 text-sm mt-1">تطوير: {DEVELOPER.name}</p>
-              </div>
-              <div className="p-8 space-y-6">
-                 <div className="space-y-4">
-                    <div className="flex items-start gap-4">
-                       <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">1</div>
-                       <div><h4 className="font-bold text-gray-800">رفع الملف</h4><p className="text-sm text-gray-500">ارفع ملف PDF بأي عدد صفحات.</p></div>
-                    </div>
-                    <div className="flex items-start gap-4">
-                       <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">2</div>
-                       <div><h4 className="font-bold text-gray-800">التوقيع والكتابة</h4><p className="text-sm text-gray-500">ارسم توقيعك بيدك واختر لونه، أو أضف نصوصاً بألوان مختلفة.</p></div>
-                    </div>
-                    <div className="flex items-start gap-4">
-                       <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">3</div>
-                       <div><h4 className="font-bold text-gray-800">التكرار الذكي</h4><p className="text-sm text-gray-500">تطبيق التعديلات على كافة الصفحات بضغطة زر.</p></div>
-                    </div>
-                 </div>
-                 <button onClick={onClose} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg">ابدأ الاستخدام</button>
-              </div>
-           </div>
-        </div>
-      );
     };
 
     const App = () => {
@@ -280,7 +272,34 @@
       const imageContainerRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // --- LIBRARY LOGIC ---
+      // --- أتمتة التاريخ المنسق (يوم-شهر-سنة) ---
+      const addDateElement = () => {
+          const today = new Date();
+          const d = String(today.getDate()).padStart(2, '0');
+          const m = String(today.getMonth() + 1).padStart(2, '0');
+          const y = today.getFullYear();
+          
+          // نص التاريخ الصافي
+          const formattedDate = d + "-" + m + "-" + y;
+          
+          const newEl = { 
+            id: Date.now(), 
+            type: 'text', 
+            text: formattedDate, 
+            color: '#000000', 
+            fontSize: 24, 
+            fontFamily: 'Cairo', 
+            x: 50, 
+            y: 50, 
+            width: 30, 
+            pageIndex: currentPage, 
+            isRepeated: false,
+            isDate: true // ميزناه كعنصر تاريخ
+          };
+          setElements(prev => [...prev, newEl]);
+          setActiveElementId(newEl.id);
+      };
+
       const addToLibrary = (src) => {
         const img = new Image();
         img.src = src;
@@ -288,28 +307,18 @@
             const canvas = document.createElement('canvas');
             const MAX_WIDTH = 300; 
             const scale = MAX_WIDTH / img.width;
-            
-            if (img.width > MAX_WIDTH) {
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scale;
-            } else {
-                canvas.width = img.width;
-                canvas.height = img.height;
-            }
-
+            canvas.width = img.width > MAX_WIDTH ? MAX_WIDTH : img.width;
+            canvas.height = img.width > MAX_WIDTH ? img.height * scale : img.height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const compressedSrc = canvas.toDataURL('image/png');
-
-            if (library.includes(compressedSrc)) return alert("هذا العنصر موجود في المكتبة مسبقاً");
-
+            if (library.includes(compressedSrc)) return alert("موجود مسبقاً");
             try {
                 const newLib = [...library, compressedSrc];
-                if (JSON.stringify(newLib).length > 4500000) return alert("ذاكرة المكتبة ممتلئة! يرجى حذف بعض العناصر القديمة.");
                 setLibrary(newLib);
                 localStorage.setItem('my_stamps_library_v2', JSON.stringify(newLib));
-                alert("تم الحفظ في المكتبة بنجاح");
-            } catch (e) { alert("حدث خطأ أثناء الحفظ (الذاكرة ممتلئة)."); }
+                alert("تم الحفظ في المكتبة");
+            } catch (e) { alert("المكتبة ممتلئة"); }
         };
       };
 
@@ -333,13 +342,13 @@
       };
 
       const addTextElement = () => {
-          const newEl = { id: Date.now(), type: 'text', text: 'نص جديد', color: '#000000', fontSize: 24, fontFamily: 'Cairo', x: 50, y: 50, width: 30, pageIndex: currentPage, isRepeated: false };
+          const newEl = { id: Date.now(), type: 'text', text: 'نص جديد', color: '#000000', fontSize: 24, fontFamily: 'Cairo', x: 50, y: 50, width: 30, pageIndex: currentPage, isRepeated: false, isDate: false };
           setElements(prev => [...prev, newEl]);
           setActiveElementId(newEl.id);
       };
 
       const handleReset = () => {
-        if (elements.length > 0 && !confirm("هل أنت متأكد من البدء من جديد؟")) return;
+        if (elements.length > 0 && !confirm("هل أنت متأكد؟")) return;
         setFile(null); setPages([]); setElements([]); setActiveElementId(null); setStep(1); setCurrentPage(0);
       };
 
@@ -434,16 +443,14 @@
           doc.addImage(pageData.dataUrl, 'JPEG', 0, 0, width, height);
           const pageElements = elements.filter(el => el.pageIndex === index || el.isRepeated);
           pageElements.forEach(el => {
-              let imgData = el.src;
               if (el.type === 'text') {
                   const textImg = textToImage(el.text, el.color, el.fontSize, el.fontFamily);
-                  imgData = textImg.dataUrl;
                   const ratio = textImg.width / textImg.height;
                   const finalH = el.fontSize * 1.5; 
                   const finalW = finalH * ratio;
                   const pdfX = (el.x / 100) * width - (finalW / 2);
                   const pdfY = (el.y / 100) * height - (finalH / 2);
-                  doc.addImage(imgData, 'PNG', pdfX, pdfY, finalW, finalH);
+                  doc.addImage(textImg.dataUrl, 'PNG', pdfX, pdfY, finalW, finalH);
               } else {
                   const imgProps = doc.getImageProperties(el.src);
                   const sigW = (el.width / 100) * width;
@@ -499,7 +506,6 @@
                       <button onClick={handleReset} className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded flex items-center gap-1 hover:bg-red-100"><Icons.Refresh /> جديد</button>
                     </div>
                     
-                    {/* LIBRARY */}
                     <div className="bg-slate-50 rounded-xl p-3 border">
                       <h3 className="text-xs font-bold text-slate-500 mb-2">مكتبة التواقيع</h3>
                       {library.length === 0 ? <p className="text-[10px] text-center text-gray-400">فارغة</p> : (
@@ -515,17 +521,19 @@
                     </div>
 
                     <div className="space-y-3">
-                        {/* ACTION BUTTONS */}
-                        <div className="grid grid-cols-3 gap-2">
-                            <button onClick={() => fileInputRef.current?.click()} className="py-2 border border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-[10px] transition-colors">
+                        <div className="grid grid-cols-2 gap-2">
+                            <button onClick={() => setShowSignatureModal(true)} className="py-2 border border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-[10px] transition-colors shadow-sm">
+                                <Icons.Pen /> رسم توقيع
+                            </button>
+                            <button onClick={() => fileInputRef.current?.click()} className="py-2 border border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-[10px] transition-colors shadow-sm">
                                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddImageFile} className="hidden" />
                                 <Icons.Plus /> رفع صورة
                             </button>
-                            <button onClick={() => setShowSignatureModal(true)} className="py-2 border border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-[10px] transition-colors">
-                                <Icons.Pen /> رسم توقيع
+                            <button onClick={addTextElement} className="py-2 border border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-[10px] transition-colors shadow-sm">
+                                <Icons.Text /> إضافة نص
                             </button>
-                            <button onClick={addTextElement} className="py-2 border border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-[10px] transition-colors">
-                                <Icons.Text /> كتابة نص
+                            <button onClick={addDateElement} className="py-2 border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-[10px] transition-colors shadow-md">
+                                <Icons.Calendar /> تاريخ اليوم
                             </button>
                         </div>
 
@@ -547,22 +555,19 @@
                                 <div><label className="text-xs text-gray-500 mb-1 block">النص</label><input type="text" value={activeElementData.text} onChange={(e) => updateActiveElement('text', e.target.value)} className="w-full p-2 text-sm border rounded" /></div>
                                 <div><label className="text-xs text-gray-500 mb-1 block">نوع الخط</label>
                                     <select value={activeElementData.fontFamily} onChange={(e) => updateActiveElement('fontFamily', e.target.value)} className="w-full p-2 text-sm border rounded bg-white">
-                                        <option value="Cairo">Cairo (الافتراضي)</option><option value="Amiri">Amiri (رسمي)</option><option value="Arial">Arial</option><option value="Times New Roman">Times New Roman</option><option value="Courier New">Courier New</option>
+                                        <option value="Cairo">Cairo</option><option value="Amiri">Amiri</option><option value="Arial">Arial</option>
                                     </select>
                                 </div>
                                 <div><label className="text-xs text-gray-500 mb-1 block">حجم الخط</label><input type="range" min="10" max="100" value={activeElementData.fontSize} onChange={(e) => updateActiveElement('fontSize', +e.target.value)} className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700" /></div>
-                                
-                                {/* Color Picker with White Added */}
                                 <div>
                                     <label className="text-xs text-gray-500 mb-1 block">اللون</label>
                                     <div className="flex gap-2">
-                                        {['#000000', '#ffffff', '#dc2626', '#2563eb', '#16a34a', '#d97706'].map(c => (
+                                        {['#000000', '#dc2626', '#2563eb', '#16a34a'].map(c => (
                                             <div 
                                                 key={c} 
                                                 onClick={() => updateActiveElement('color', c)} 
                                                 className={`w-6 h-6 rounded-full cursor-pointer border-2 shadow-sm ${activeElementData.color === c ? 'border-slate-800 scale-110' : 'border-gray-200'}`} 
                                                 style={{background: c}}
-                                                title={c}
                                             ></div>
                                         ))}
                                     </div>
@@ -595,10 +600,15 @@
                             {el.type === 'image' ? (
                                 <img src={el.src} className="w-full h-full object-contain pointer-events-none select-none" draggable="false" />
                             ) : (
-                                <div style={{ fontSize: `${el.fontSize}px`, color: el.color, fontFamily: el.fontFamily, fontWeight: 'bold', textShadow: el.color === '#ffffff' ? '0 1px 3px rgba(0,0,0,0.5)' : 'none' }}>{el.text}</div>
+                                <div className={el.isDate ? "force-ltr" : ""} style={{ 
+                                    fontSize: `${el.fontSize}px`, 
+                                    color: el.color, 
+                                    fontFamily: el.fontFamily, 
+                                    fontWeight: 'bold',
+                                    direction: el.isDate ? 'ltr' : 'inherit'
+                                }}>{el.text}</div>
                             )}
                             {el.isRepeated && <div className="repeated-badge">تكرار</div>}
-                            {activeElementId === el.id && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-600 rounded-full shadow border border-white"></div>}
                           </div>
                         ))}
                       </div>
