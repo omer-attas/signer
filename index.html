@@ -4,16 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <meta name="theme-color" content="#1e293b">
-  <title>الموثق الذكي - أ. عمر العطاس</title>
+  <title>الموثق الذكي Pro - أ. عمر العطاس</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
   
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['Cairo', 'sans-serif'] },
+          fontFamily: { 
+            sans: ['Cairo', 'sans-serif'],
+            amiri: ['Amiri', 'serif'],
+          },
           colors: { primary: '#1e293b', secondary: '#334155', accent: '#3b82f6' },
           cursor: { 'grab': 'grab', 'grabbing': 'grabbing' }
         }
@@ -30,11 +33,10 @@
     .draggable-item { touch-action: none; user-select: none; }
     .active-element {
         outline: 2px dashed #3b82f6;
-        outline-offset: 2px;
-        background-color: rgba(59, 130, 246, 0.1);
+        outline-offset: 4px;
     }
     .repeated-badge {
-        position: absolute; top: -12px; right: -12px;
+        position: absolute; top: -15px; right: -10px;
         background: #f59e0b; color: white; font-size: 10px; font-weight: bold;
         padding: 2px 8px; border-radius: 12px; z-index: 60;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2); white-space: nowrap;
@@ -42,7 +44,6 @@
     .library-scroll::-webkit-scrollbar { height: 6px; }
     .library-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     
-    /* Animation */
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade-up { animation: fadeIn 0.4s ease-out forwards; }
   </style>
@@ -64,15 +65,11 @@
   <script type="text/babel">
     const { useState, useCallback, useRef, useEffect } = React;
 
-    // ==========================================
-    // ⬇️⬇️ بياناتك الشخصية المحدثة ⬇️⬇️
-    // ==========================================
     const DEVELOPER = {
         name: "أ. عمر بن حسن العطاس",
         twitterHandle: "@omer_attas", 
         twitterUrl: "https://x.com/omer_attas"
     };
-    // ==========================================
 
     // --- ICONS ---
     const Icons = {
@@ -87,7 +84,7 @@
       Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
       Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
       Twitter: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
-      Info: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+      Text: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
     };
 
     // --- RENDER ENGINE ---
@@ -109,6 +106,36 @@
       };
     };
 
+    // Helper: Convert Text to Image (Includes Font Family)
+    const textToImage = (text, color, fontSize, fontFamily) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Prepare Font String
+        const fontString = `bold ${fontSize * 2}px "${fontFamily}", sans-serif`;
+
+        // Estimate size
+        ctx.font = fontString;
+        const metrics = ctx.measureText(text);
+        const width = Math.ceil(metrics.width + 40); // Add padding
+        const height = Math.ceil((fontSize * 2) * 1.5);
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw
+        ctx.font = fontString;
+        ctx.fillStyle = color;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 20, height / 2);
+        
+        return {
+            dataUrl: canvas.toDataURL('image/png'),
+            width: width / 2, 
+            height: height / 2 
+        };
+    };
+
     // --- WELCOME MODAL COMPONENT ---
     const WelcomeModal = ({ onClose }) => {
       return (
@@ -128,21 +155,21 @@
                        <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">1</div>
                        <div>
                           <h4 className="font-bold text-gray-800">رفع الملف</h4>
-                          <p className="text-sm text-gray-500">ارفع ملف PDF (شهادات، خطابات) بأي عدد صفحات.</p>
+                          <p className="text-sm text-gray-500">ارفع ملف PDF بأي عدد صفحات.</p>
                        </div>
                     </div>
                     <div className="flex items-start gap-4">
                        <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">2</div>
                        <div>
-                          <h4 className="font-bold text-gray-800">إضافة التوقيع</h4>
-                          <p className="text-sm text-gray-500">أضف صورة التوقيع أو الختم، واحفظها في المكتبة للاستخدام الدائم.</p>
+                          <h4 className="font-bold text-gray-800">الإضافة والتعديل</h4>
+                          <p className="text-sm text-gray-500">أضف التواقيع أو النصوص، واختر نوع الخط (Cairo, Arial, Amiri).</p>
                        </div>
                     </div>
                     <div className="flex items-start gap-4">
                        <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">3</div>
                        <div>
                           <h4 className="font-bold text-gray-800">التكرار الذكي</h4>
-                          <p className="text-sm text-gray-500">اضغط "تكرار على الكل" ليتم توقيع 100 شهادة في ثانية واحدة.</p>
+                          <p className="text-sm text-gray-500">تطبيق التعديلات على كافة الصفحات بضغطة زر.</p>
                        </div>
                     </div>
                  </div>
@@ -150,12 +177,6 @@
                  <button onClick={onClose} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg">
                     ابدأ الاستخدام
                  </button>
-                 
-                 <div className="text-center pt-2 border-t">
-                    <a href={DEVELOPER.twitterUrl} target="_blank" className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-700 font-medium dir-ltr">
-                       <Icons.Twitter /> {DEVELOPER.twitterHandle}
-                    </a>
-                 </div>
               </div>
            </div>
         </div>
@@ -169,13 +190,14 @@
       const [pages, setPages] = useState([]); 
       const [currentPage, setCurrentPage] = useState(0);
       const [processingStats, setStats] = useState({ current: 0, total: 0 });
-      const [stamps, setStamps] = useState([]); 
-      const [activeStampId, setActiveStampId] = useState(null);
+      // Elements: { ... fontFamily }
+      const [elements, setElements] = useState([]); 
+      const [activeElementId, setActiveElementId] = useState(null);
       const [library, setLibrary] = useState(() => {
         const saved = localStorage.getItem('my_stamps_library');
         return saved ? JSON.parse(saved) : [];
       });
-      const [dragState, setDragState] = useState({ isDragging: false, startX: 0, startY: 0, initialStampX: 0, initialStampY: 0 });
+      const [dragState, setDragState] = useState({ isDragging: false, startX: 0, startY: 0, initialElX: 0, initialElY: 0 });
       const imageContainerRef = useRef(null);
       const fileInputRef = useRef(null);
 
@@ -198,14 +220,31 @@
       };
 
       const addFromLibrary = (src) => {
-        const newStamp = { id: Date.now(), src, x: 50, y: 50, width: 20, pageIndex: currentPage, isRepeated: false };
-        setStamps(prev => [...prev, newStamp]);
-        setActiveStampId(newStamp.id);
+        const newEl = { id: Date.now(), type: 'image', src, x: 50, y: 50, width: 20, pageIndex: currentPage, isRepeated: false };
+        setElements(prev => [...prev, newEl]);
+        setActiveElementId(newEl.id);
+      };
+
+      const addTextElement = () => {
+          const newEl = { 
+              id: Date.now(), 
+              type: 'text', 
+              text: 'نص جديد', 
+              color: '#000000', 
+              fontSize: 24, 
+              fontFamily: 'Cairo', // Default Font
+              x: 50, y: 50, 
+              width: 30, 
+              pageIndex: currentPage, 
+              isRepeated: false 
+          };
+          setElements(prev => [...prev, newEl]);
+          setActiveElementId(newEl.id);
       };
 
       const handleReset = () => {
-        if (stamps.length > 0 && !confirm("هل أنت متأكد من البدء من جديد؟")) return;
-        setFile(null); setPages([]); setStamps([]); setActiveStampId(null); setStep(1); setCurrentPage(0);
+        if (elements.length > 0 && !confirm("هل أنت متأكد من البدء من جديد؟")) return;
+        setFile(null); setPages([]); setElements([]); setActiveElementId(null); setStep(1); setCurrentPage(0);
       };
 
       const handleFileSelect = (e) => { if (e.target.files?.[0]) setFile(e.target.files[0]); };
@@ -229,51 +268,51 @@
         } catch (err) { alert("خطأ: " + err.message); setStep(1); }
       };
 
-      const handleAddStampFile = (e) => {
+      const handleAddImageFile = (e) => {
         if (e.target.files?.[0]) {
           const reader = new FileReader();
           reader.onload = (ev) => {
             const src = ev.target.result;
-            const newStamp = { id: Date.now(), src, x: 50, y: 50, width: 20, pageIndex: currentPage, isRepeated: false };
-            setStamps(prev => [...prev, newStamp]);
-            setActiveStampId(newStamp.id);
+            const newEl = { id: Date.now(), type: 'image', src, x: 50, y: 50, width: 20, pageIndex: currentPage, isRepeated: false };
+            setElements(prev => [...prev, newEl]);
+            setActiveElementId(newEl.id);
             e.target.value = '';
           };
           reader.readAsDataURL(e.target.files[0]);
         }
       };
 
-      const updateActiveStamp = (key, value) => {
-        if (!activeStampId) return;
-        setStamps(prev => prev.map(s => s.id === activeStampId ? { ...s, [key]: value } : s));
+      const updateActiveElement = (key, value) => {
+        if (!activeElementId) return;
+        setElements(prev => prev.map(el => el.id === activeElementId ? { ...el, [key]: value } : el));
       };
 
-      const deleteActiveStamp = () => {
-        if (!activeStampId) return;
-        setStamps(prev => prev.filter(s => s.id !== activeStampId));
-        setActiveStampId(null);
+      const deleteActiveElement = () => {
+        if (!activeElementId) return;
+        setElements(prev => prev.filter(el => el.id !== activeElementId));
+        setActiveElementId(null);
       };
 
       const handlePointerDown = (e, id) => {
         e.stopPropagation(); e.preventDefault();
-        const stamp = stamps.find(s => s.id === id);
-        if (!stamp) return;
-        setActiveStampId(id);
-        setDragState({ isDragging: true, startX: e.clientX, startY: e.clientY, initialStampX: stamp.x, initialStampY: stamp.y });
+        const el = elements.find(s => s.id === id);
+        if (!el) return;
+        setActiveElementId(id);
+        setDragState({ isDragging: true, startX: e.clientX, startY: e.clientY, initialElX: el.x, initialElY: el.y });
       };
 
       const handlePointerMove = useCallback((e) => {
-        if (!dragState.isDragging || !activeStampId || !imageContainerRef.current) return;
+        if (!dragState.isDragging || !activeElementId || !imageContainerRef.current) return;
         e.preventDefault();
         const rect = imageContainerRef.current.getBoundingClientRect();
         const deltaX = e.clientX - dragState.startX;
         const deltaY = e.clientY - dragState.startY;
         const deltaPercentX = (deltaX / rect.width) * 100;
         const deltaPercentY = (deltaY / rect.height) * 100;
-        let newX = Math.max(0, Math.min(100, dragState.initialStampX + deltaPercentX));
-        let newY = Math.max(0, Math.min(100, dragState.initialStampY + deltaPercentY));
-        setStamps(prev => prev.map(s => s.id === activeStampId ? { ...s, x: newX, y: newY } : s));
-      }, [dragState, activeStampId]);
+        let newX = Math.max(0, Math.min(100, dragState.initialElX + deltaPercentX));
+        let newY = Math.max(0, Math.min(100, dragState.initialElY + deltaPercentY));
+        setElements(prev => prev.map(el => el.id === activeElementId ? { ...el, x: newX, y: newY } : el));
+      }, [dragState, activeElementId]);
 
       const handlePointerUp = () => setDragState(prev => ({ ...prev, isDragging: false }));
 
@@ -292,33 +331,52 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'p', unit: 'pt' }); 
         doc.deletePage(1);
+        
         pages.forEach((pageData, index) => {
           const isLandscape = pageData.width > pageData.height;
           const [width, height] = pageData.originalFormat;
           doc.addPage([width, height], isLandscape ? 'l' : 'p');
           doc.addImage(pageData.dataUrl, 'JPEG', 0, 0, width, height);
-          const pageStamps = stamps.filter(s => s.pageIndex === index || s.isRepeated);
-          pageStamps.forEach(stamp => {
-             const imgProps = doc.getImageProperties(stamp.src);
-             const sigW = (stamp.width / 100) * width;
-             const sigH = (imgProps.height * sigW) / imgProps.width;
-             const sigX = (stamp.x / 100) * width - (sigW / 2);
-             const sigY = (stamp.y / 100) * height - (sigH / 2);
-             doc.addImage(stamp.src, 'PNG', sigX, sigY, sigW, sigH);
+          
+          const pageElements = elements.filter(el => el.pageIndex === index || el.isRepeated);
+          
+          pageElements.forEach(el => {
+              let imgData = el.src;
+              
+              if (el.type === 'text') {
+                  // Pass FontFamily to the generator
+                  const textImg = textToImage(el.text, el.color, el.fontSize, el.fontFamily);
+                  imgData = textImg.dataUrl;
+                  
+                  const ratio = textImg.width / textImg.height;
+                  const finalH = el.fontSize * 1.5; 
+                  const finalW = finalH * ratio;
+                  
+                  const pdfX = (el.x / 100) * width - (finalW / 2);
+                  const pdfY = (el.y / 100) * height - (finalH / 2);
+                  
+                  doc.addImage(imgData, 'PNG', pdfX, pdfY, finalW, finalH);
+
+              } else {
+                  const imgProps = doc.getImageProperties(el.src);
+                  const sigW = (el.width / 100) * width;
+                  const sigH = (imgProps.height * sigW) / imgProps.width;
+                  const sigX = (el.x / 100) * width - (sigW / 2);
+                  const sigY = (el.y / 100) * height - (sigH / 2);
+                  doc.addImage(el.src, 'PNG', sigX, sigY, sigW, sigH);
+              }
           });
         });
         doc.save(`Signed_${Date.now()}.pdf`);
       };
 
-      const activeStampData = stamps.find(s => s.id === activeStampId);
+      const activeElementData = elements.find(el => el.id === activeElementId);
       const currentPageData = pages[currentPage];
 
       return (
         <div className="h-screen flex flex-col bg-slate-200 overflow-hidden">
-           {/* Welcome Modal */}
            {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
 
-           {/* MAIN CONTENT */}
            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
               
               {step === 1 && (
@@ -350,52 +408,83 @@
 
               {step === 3 && (
                 <>
-                  {/* SIDEBAR */}
                   <div className="w-full md:w-80 bg-white border-l border-gray-300 p-4 flex flex-col gap-4 z-20 shadow-lg overflow-y-auto h-1/3 md:h-full shrink-0">
                     <div className="flex items-center justify-between text-slate-800 font-bold text-lg border-b pb-2">
                       <span className="flex items-center gap-2"><Icons.Badge /> أدوات التحكم</span>
                       <button onClick={handleReset} className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded flex items-center gap-1 hover:bg-red-100"><Icons.Refresh /> جديد</button>
                     </div>
 
-                    {/* LIBRARY */}
-                    <div className="bg-slate-50 rounded-xl p-3 border">
-                      <h3 className="text-xs font-bold text-slate-500 mb-2">مكتبة التواقيع</h3>
-                      {library.length === 0 ? <p className="text-[10px] text-center text-gray-400">فارغة</p> : (
-                        <div className="flex gap-2 overflow-x-auto library-scroll pb-2">
-                            {library.map((src, idx) => (
-                              <div key={idx} className="relative shrink-0 group">
-                                <img src={src} className="w-12 h-12 object-contain bg-white border rounded cursor-pointer hover:border-blue-500" onClick={() => addFromLibrary(src)} />
-                                <button onClick={() => removeFromLibrary(idx)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100">×</button>
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </div>
-
                     <div className="space-y-3">
-                      <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 border-2 border-dashed border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
-                        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddStampFile} className="hidden" />
-                        <Icons.Plus /> إضافة توقيع جديد
-                      </button>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button onClick={() => fileInputRef.current?.click()} className="py-3 border border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-xs transition-colors">
+                                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAddImageFile} className="hidden" />
+                                <Icons.Plus /> إضافة توقيع
+                            </button>
+                            <button onClick={addTextElement} className="py-3 border border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold flex flex-col items-center justify-center gap-1 text-xs transition-colors">
+                                <Icons.Text /> إضافة نص
+                            </button>
+                        </div>
 
-                      {activeStampId ? (
+                      {activeElementId && activeElementData ? (
                         <div className="bg-slate-50 p-3 rounded-xl border space-y-3 animate-fade-in shadow-sm">
                           <div className="flex justify-between items-center text-sm font-bold text-gray-700 border-b pb-2">
-                            <span>خصائص العنصر</span>
-                            <button onClick={deleteActiveStamp} className="text-red-500 bg-red-50 p-1.5 rounded hover:bg-red-100"><Icons.Trash /></button>
+                            <span>خصائص: {activeElementData.type === 'text' ? 'النص' : 'الصورة'}</span>
+                            <button onClick={deleteActiveElement} className="text-red-500 bg-red-50 p-1.5 rounded hover:bg-red-100"><Icons.Trash /></button>
                           </div>
-                          <button onClick={() => addToLibrary(activeStampData.src)} className="w-full text-xs bg-slate-200 text-slate-700 py-1 rounded hover:bg-slate-300 flex items-center justify-center gap-1"><Icons.Save /> حفظ في المكتبة</button>
-                          <button onClick={() => updateActiveStamp('isRepeated', !activeStampData.isRepeated)} className={`w-full py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-between transition-colors ${activeStampData.isRepeated ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-white border text-gray-500 hover:bg-gray-50'}`}>
-                            <span className="flex items-center gap-2"><Icons.Copy /> {activeStampData.isRepeated ? "التكرار مفعل" : "تكرار على الكل"}</span>
-                            <div className={`w-8 h-4 rounded-full relative transition-colors ${activeStampData.isRepeated ? 'bg-amber-500' : 'bg-gray-300'}`}><div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-all ${activeStampData.isRepeated ? 'left-4' : 'left-0.5'}`}></div></div>
+                          
+                          {activeElementData.type === 'image' && (
+                            <button onClick={() => addToLibrary(activeElementData.src)} className="w-full text-xs bg-slate-200 text-slate-700 py-1 rounded hover:bg-slate-300 flex items-center justify-center gap-1"><Icons.Save /> حفظ في المكتبة</button>
+                          )}
+
+                          <button onClick={() => updateActiveElement('isRepeated', !activeElementData.isRepeated)} className={`w-full py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-between transition-colors ${activeElementData.isRepeated ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-white border text-gray-500 hover:bg-gray-50'}`}>
+                            <span className="flex items-center gap-2"><Icons.Copy /> {activeElementData.isRepeated ? "التكرار مفعل" : "تكرار على الكل"}</span>
+                            <div className={`w-8 h-4 rounded-full relative transition-colors ${activeElementData.isRepeated ? 'bg-amber-500' : 'bg-gray-300'}`}><div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-all ${activeElementData.isRepeated ? 'left-4' : 'left-0.5'}`}></div></div>
                           </button>
-                          <div>
-                            <label className="text-xs text-gray-500 mb-1 block">الحجم</label>
-                            <input type="range" min="5" max="80" value={activeStampData?.width || 20} onChange={(e) => updateActiveStamp('width', +e.target.value)} className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700" />
-                          </div>
+                          
+                          {/* Text Specific Controls */}
+                          {activeElementData.type === 'text' && (
+                              <>
+                                <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">النص</label>
+                                    <input type="text" value={activeElementData.text} onChange={(e) => updateActiveElement('text', e.target.value)} className="w-full p-2 text-sm border rounded" />
+                                </div>
+                                
+                                <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">نوع الخط</label>
+                                    <select value={activeElementData.fontFamily} onChange={(e) => updateActiveElement('fontFamily', e.target.value)} className="w-full p-2 text-sm border rounded bg-white">
+                                        <option value="Cairo">Cairo (الافتراضي)</option>
+                                        <option value="Amiri">Amiri (رسمي)</option>
+                                        <option value="Arial">Arial</option>
+                                        <option value="Times New Roman">Times New Roman</option>
+                                        <option value="Courier New">Courier New</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">حجم الخط</label>
+                                    <input type="range" min="10" max="100" value={activeElementData.fontSize} onChange={(e) => updateActiveElement('fontSize', +e.target.value)} className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">اللون</label>
+                                    <div className="flex gap-2">
+                                        {['#000000', '#dc2626', '#2563eb', '#16a34a', '#d97706'].map(c => (
+                                            <div key={c} onClick={() => updateActiveElement('color', c)} className={`w-6 h-6 rounded-full cursor-pointer border-2 ${activeElementData.color === c ? 'border-gray-600 scale-110' : 'border-transparent'}`} style={{background: c}}></div>
+                                        ))}
+                                    </div>
+                                </div>
+                              </>
+                          )}
+
+                          {/* Image Specific Controls */}
+                          {activeElementData.type === 'image' && (
+                             <div>
+                                <label className="text-xs text-gray-500 mb-1 block">الحجم</label>
+                                <input type="range" min="5" max="80" value={activeElementData.width} onChange={(e) => updateActiveElement('width', +e.target.value)} className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700" />
+                             </div>
+                          )}
                         </div>
                       ) : (
-                        <div className="text-center text-gray-400 text-xs py-2 border rounded-xl bg-gray-50">حدد أي توقيع لتعديله</div>
+                        <div className="text-center text-gray-400 text-xs py-2 border rounded-xl bg-gray-50">حدد عنصراً لتعديله</div>
                       )}
                     </div>
 
@@ -409,16 +498,40 @@
                     </div>
                   </div>
 
-                  {/* CANVAS PREVIEW AREA */}
-                  <div className="flex-1 preview-bg relative overflow-auto flex items-center justify-center p-4 md:p-8 touch-none" onClick={() => setActiveStampId(null)}>
+                  <div className="flex-1 preview-bg relative overflow-auto flex items-center justify-center p-4 md:p-8 touch-none" onClick={() => setActiveElementId(null)}>
                     {currentPageData && (
                       <div ref={imageContainerRef} className="relative shadow-2xl bg-white transition-all select-none" style={{ width: currentPageData.aspectRatio > 1 ? '95%' : 'auto', height: currentPageData.aspectRatio > 1 ? 'auto' : '90vh', aspectRatio: `${currentPageData.aspectRatio}` }} onClick={(e) => e.stopPropagation()}>
                         <img src={currentPageData.dataUrl} className="w-full h-full object-contain pointer-events-none select-none block" draggable="false"/>
-                        {stamps.filter(s => s.pageIndex === currentPage || s.isRepeated).map(stamp => (
-                          <div key={stamp.id} onPointerDown={(e) => handlePointerDown(e, stamp.id)} style={{ position: 'absolute', left: `${stamp.x}%`, top: `${stamp.y}%`, width: `${stamp.width}%`, transform: 'translate(-50%, -50%)', zIndex: 50, cursor: 'grab' }} className={`draggable-item group rounded ${activeStampId === stamp.id ? 'active-element' : ''}`}>
-                            <img src={stamp.src} className="w-full h-full object-contain pointer-events-none select-none" draggable="false" />
-                            {stamp.isRepeated && <div className="repeated-badge">تكرار</div>}
-                            {activeStampId === stamp.id && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-600 rounded-full shadow border border-white"></div>}
+                        {elements.filter(el => el.pageIndex === currentPage || el.isRepeated).map(el => (
+                          <div key={el.id} onPointerDown={(e) => handlePointerDown(e, el.id)} 
+                               style={{ 
+                                   position: 'absolute', 
+                                   left: `${el.x}%`, 
+                                   top: `${el.y}%`, 
+                                   width: el.type === 'image' ? `${el.width}%` : 'auto', 
+                                   transform: 'translate(-50%, -50%)', 
+                                   zIndex: 50, 
+                                   cursor: 'grab',
+                                   whiteSpace: 'nowrap'
+                               }} 
+                               className={`draggable-item group rounded ${activeElementId === el.id ? 'active-element' : ''}`}>
+                            
+                            {el.type === 'image' ? (
+                                <img src={el.src} className="w-full h-full object-contain pointer-events-none select-none" draggable="false" />
+                            ) : (
+                                <div style={{ 
+                                    fontSize: `${el.fontSize}px`, 
+                                    color: el.color, 
+                                    fontFamily: el.fontFamily,
+                                    fontWeight: 'bold',
+                                    textShadow: '0 1px 2px rgba(255,255,255,0.8)'
+                                }}>
+                                    {el.text}
+                                </div>
+                            )}
+
+                            {el.isRepeated && <div className="repeated-badge">تكرار</div>}
+                            {activeElementId === el.id && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-600 rounded-full shadow border border-white"></div>}
                           </div>
                         ))}
                       </div>
@@ -428,9 +541,8 @@
               )}
            </div>
            
-           {/* FOOTER */}
            <div className="bg-slate-900 text-slate-400 text-xs py-2 px-4 flex justify-between items-center shrink-0">
-              <div>برنامج الموثق الذكي © 2025</div>
+              <div>برنامج الموثق الذكي Pro © 2025</div>
               <div className="flex items-center gap-3">
                  <span>تطوير: {DEVELOPER.name}</span>
                  <a href={DEVELOPER.twitterUrl} target="_blank" className="hover:text-white transition-colors"><Icons.Twitter /></a>
