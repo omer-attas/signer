@@ -47,7 +47,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade-up { animation: fadeIn 0.4s ease-out forwards; }
     canvas { touch-action: none; }
-    /* إجبار التاريخ على اتجاه محدد */
     .force-ltr { direction: ltr !important; unicode-bidi: isolate; text-align: left; }
   </style>
 
@@ -113,7 +112,7 @@
                      </div>
                      <div className="flex items-start gap-4">
                         <div className="bg-blue-50 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">3</div>
-                        <div><h4 className="font-bold text-gray-800">الأتمتة</h4><p className="text-sm text-gray-500">استخدم ميزة "التكرار" لتوقيع كامل الملف دفعة واحدة.</p></div>
+                        <div><h4 className="font-bold text-gray-800">الأتمتة والحفاظ على الروابط</h4><p className="text-sm text-gray-500">ميزة التكرار + الحفاظ على الروابط التشعبية تعمل تلقائياً.</p></div>
                      </div>
                   </div>
                   <button onClick={onClose} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold shadow-lg transition-all">ابدأ الاستخدام</button>
@@ -123,6 +122,7 @@
       );
     };
 
+    // --- معدل: استخراج الروابط مع الصفحة ---
     const renderPage = async (pdf, pageNumber) => {
       const page = await pdf.getPage(pageNumber);
       const scale = 2.0; 
@@ -131,13 +131,32 @@
       const context = canvas.getContext('2d', { willReadFrequently: true });
       canvas.height = viewport.height;
       canvas.width = viewport.width;
+      
       await page.render({ canvasContext: context, viewport: viewport }).promise;
+      
+      // استخراج الروابط
+      const annotations = await page.getAnnotations();
+      const links = annotations
+        .filter(a => a.subtype === 'Link' && a.url)
+        .map(a => {
+            // تحويل إحداثيات PDF إلى إحداثيات الـ Viewport الحالية
+            const rect = viewport.convertToViewportRectangle(a.rect);
+            return {
+                url: a.url,
+                x: Math.min(rect[0], rect[2]), // X
+                y: Math.min(rect[1], rect[3]), // Y (Top)
+                w: Math.abs(rect[0] - rect[2]), // Width
+                h: Math.abs(rect[1] - rect[3])  // Height
+            };
+        });
+
       return {
         dataUrl: canvas.toDataURL('image/jpeg', 0.9),
         width: viewport.width,
         height: viewport.height,
         aspectRatio: viewport.width / viewport.height,
-        originalFormat: [viewport.width / scale, viewport.height / scale]
+        originalFormat: [viewport.width / scale, viewport.height / scale],
+        links: links // تخزين الروابط المستخرجة
       };
     };
 
@@ -162,7 +181,6 @@
         };
     };
 
-    // --- نافذة التوقيع (تم إصلاح تقطع الخط نهائياً) ---
     const SignatureModal = ({ onClose, onSave }) => {
         const canvasRef = useRef(null);
         const [isDrawing, setIsDrawing] = useState(false);
@@ -190,7 +208,6 @@
             ctx.lineJoin = 'round';
             ctx.strokeStyle = penColor;
             
-            // نبدأ المسار هنا مرة واحدة فقط
             ctx.beginPath();
             ctx.moveTo(pos.x, pos.y);
         };
@@ -200,8 +217,6 @@
             e.preventDefault();
             const pos = getPos(e);
             const ctx = canvasRef.current.getContext('2d');
-            
-            // توصيل المسار الحالي بالنقطة الجديدة
             ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
         };
@@ -272,30 +287,13 @@
       const imageContainerRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // --- أتمتة التاريخ المنسق (يوم-شهر-سنة) ---
       const addDateElement = () => {
           const today = new Date();
           const d = String(today.getDate()).padStart(2, '0');
           const m = String(today.getMonth() + 1).padStart(2, '0');
           const y = today.getFullYear();
-          
-          // نص التاريخ الصافي
           const formattedDate = d + "-" + m + "-" + y;
-          
-          const newEl = { 
-            id: Date.now(), 
-            type: 'text', 
-            text: formattedDate, 
-            color: '#000000', 
-            fontSize: 24, 
-            fontFamily: 'Cairo', 
-            x: 50, 
-            y: 50, 
-            width: 30, 
-            pageIndex: currentPage, 
-            isRepeated: false,
-            isDate: true // ميزناه كعنصر تاريخ
-          };
+          const newEl = { id: Date.now(), type: 'text', text: formattedDate, color: '#000000', fontSize: 24, fontFamily: 'Cairo', x: 50, y: 50, width: 30, pageIndex: currentPage, isRepeated: false, isDate: true };
           setElements(prev => [...prev, newEl]);
           setActiveElementId(newEl.id);
       };
@@ -436,11 +434,31 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'p', unit: 'pt' }); 
         doc.deletePage(1);
+        
         pages.forEach((pageData, index) => {
           const isLandscape = pageData.width > pageData.height;
           const [width, height] = pageData.originalFormat;
           doc.addPage([width, height], isLandscape ? 'l' : 'p');
+          
+          // 1. إضافة صورة الصفحة (الخلفية)
           doc.addImage(pageData.dataUrl, 'JPEG', 0, 0, width, height);
+          
+          // 2. إعادة رسم الروابط (الحل السحري)
+          if (pageData.links) {
+              pageData.links.forEach(link => {
+                  // الروابط تم استخراجها من الـ Viewport (scale 2.0)
+                  // نحتاج لقسمتها على 2 لتعود لحجم الـ PDF الأصلي
+                  doc.link(
+                      link.x / 2.0, 
+                      link.y / 2.0, 
+                      link.w / 2.0, 
+                      link.h / 2.0, 
+                      { url: link.url }
+                  );
+              });
+          }
+
+          // 3. إضافة العناصر (توقيعات ونصوص)
           const pageElements = elements.filter(el => el.pageIndex === index || el.isRepeated);
           pageElements.forEach(el => {
               if (el.type === 'text') {
