@@ -50,8 +50,8 @@
     .force-ltr { direction: ltr !important; unicode-bidi: isolate; text-align: left; }
   </style>
 
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -90,7 +90,6 @@
       Pen: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
     };
 
-    // --- واجهة التعريف ---
     const WelcomeModal = ({ onClose }) => {
       return (
         <div className="fixed inset-0 z-[500] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -122,7 +121,6 @@
       );
     };
 
-    // --- معدل: استخراج الروابط مع الصفحة ---
     const renderPage = async (pdf, pageNumber) => {
       const page = await pdf.getPage(pageNumber);
       const scale = 2.0; 
@@ -134,19 +132,17 @@
       
       await page.render({ canvasContext: context, viewport: viewport }).promise;
       
-      // استخراج الروابط
       const annotations = await page.getAnnotations();
       const links = annotations
         .filter(a => a.subtype === 'Link' && a.url)
         .map(a => {
-            // تحويل إحداثيات PDF إلى إحداثيات الـ Viewport الحالية
             const rect = viewport.convertToViewportRectangle(a.rect);
             return {
                 url: a.url,
-                x: Math.min(rect[0], rect[2]), // X
-                y: Math.min(rect[1], rect[3]), // Y (Top)
-                w: Math.abs(rect[0] - rect[2]), // Width
-                h: Math.abs(rect[1] - rect[3])  // Height
+                x: Math.min(rect[0], rect[2]),
+                y: Math.min(rect[1], rect[3]),
+                w: Math.abs(rect[0] - rect[2]),
+                h: Math.abs(rect[1] - rect[3])
             };
         });
 
@@ -156,7 +152,7 @@
         height: viewport.height,
         aspectRatio: viewport.width / viewport.height,
         originalFormat: [viewport.width / scale, viewport.height / scale],
-        links: links // تخزين الروابط المستخرجة
+        links: links
       };
     };
 
@@ -440,14 +436,10 @@
           const [width, height] = pageData.originalFormat;
           doc.addPage([width, height], isLandscape ? 'l' : 'p');
           
-          // 1. إضافة صورة الصفحة (الخلفية)
           doc.addImage(pageData.dataUrl, 'JPEG', 0, 0, width, height);
           
-          // 2. إعادة رسم الروابط (الحل السحري)
           if (pageData.links) {
               pageData.links.forEach(link => {
-                  // الروابط تم استخراجها من الـ Viewport (scale 2.0)
-                  // نحتاج لقسمتها على 2 لتعود لحجم الـ PDF الأصلي
                   doc.link(
                       link.x / 2.0, 
                       link.y / 2.0, 
@@ -458,7 +450,6 @@
               });
           }
 
-          // 3. إضافة العناصر (توقيعات ونصوص)
           const pageElements = elements.filter(el => el.pageIndex === index || el.isRepeated);
           pageElements.forEach(el => {
               if (el.type === 'text') {
